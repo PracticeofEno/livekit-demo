@@ -4,9 +4,10 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { RoomController } from './room/room.controller';
 import { RoomModule } from './room/room.module';
+import { ParticipantsModule } from './participants/participants.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), RoomModule],
+  imports: [ConfigModule.forRoot(), RoomModule, ParticipantsModule],
   controllers: [AppController, RoomController],
   providers: [AppService],
 })

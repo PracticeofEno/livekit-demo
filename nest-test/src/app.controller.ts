@@ -11,8 +11,8 @@ export class AppController {
   }
 
   @Get('get_lk_token')
-  getToken(@Query('room') room, @Query('username') username ): string {
-	console.log(room);
-	return this.appService.getToken(room, username);
+  getToken(@Query('room') room, @Query('username') username): string {
+    console.log(room);
+    return this.appService.getToken(room, username);
   }
 }

@@ -7,6 +7,6 @@ import { ConfigModule } from '@nestjs/config';
   imports: [ConfigModule.forRoot()],
   controllers: [RoomController],
   providers: [RoomService],
-  exports: [RoomService]
+  exports: [RoomService],
 })
 export class RoomModule {}
