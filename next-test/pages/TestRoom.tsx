@@ -1,7 +1,9 @@
 import '../app/globals.css';
 import {
   LocalParticipant,
+  LocalTrack,
   LocalTrackPublication,
+  LocalVideoTrack,
   Participant,
   RemoteParticipant,
   RemoteTrack,
@@ -11,15 +13,13 @@ import {
   Track,
   TrackPublication,
   VideoPresets,
+  createLocalVideoTrack,
 } from 'livekit-client';
 import axios, { type AxiosResponse } from "axios";
-import { get } from 'http';
+import { BackgroundBlur } from '@livekit/track-processors';
 
 const url = "ws://localhost:7880"
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6InRlc3QifSwiaWF0IjoxNjkxNDk4OTQ3LCJuYmYiOjE2OTE0OTg5NDcsImV4cCI6MTY5MTUyMDU0NywiaXNzIjoiZGV2a2V5Iiwic3ViIjoidGVzdDIiLCJqdGkiOiJ0ZXN0MiJ9.i0YLk_i8_ZTnosYqK2VgIaqZeSJno7u977z7Kulsa-A"
-let myVideo = "";
-let myVideo2: LocalTrackPublication;
-let videoStream;
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6InRlc3QifSwiaWF0IjoxNjkxNTY3NTM2LCJuYmYiOjE2OTE1Njc1MzYsImV4cCI6MTY5MTU4OTEzNiwiaXNzIjoiZGV2a2V5Iiwic3ViIjoidGVzdCIsImp0aSI6InRlc3QifQ.v7DLe-MzNILjBPf97BYkA55Ojsc0c8AABZwJXUpptek"
 
 // creates a new room with options
 const room = new Room({
@@ -46,37 +46,34 @@ async function connectRoom() {
     // set up event listeners
 }
 
-async function test() {
-    
-    // myVideo2 = room.localParticipant.videoTracks.get()
-}
+
 
 async function getRoomParitipants() {
     let participant = await axios.request(
         {
             method: 'GET',
-            url: 'http://localhost:3001/room/test/participants',
+            url: 'http://localhost:4444/room/test/participants',
         }
     )
-    participant.data.forEach((participant: any) => {
-        room.localParticipant.getTrack(Track.Source.Camera)?.trackSid
-        let getParticipant : Participant | undefined = room.getParticipantByIdentity(participant.identity);
-        if (getParticipant) {
-            if (getParticipant instanceof LocalParticipant) {
-                room.localParticipant.videoTracks.get(room.localParticipant.getTrack(Track.Source.Camera)?.trackSid as string)?.track?.attach(document.getElementById('test') as HTMLVideoElement);
-            }
-            else if (getParticipant instanceof RemoteParticipant) {
-                getParticipant.tracks.forEach((track: RemoteTrackPublication) => {
-                    if (track.mimeType?.includes('video')) {
-                        console.log(`video`)
-                        track.track?.attach(document.getElementById('test2') as HTMLVideoElement);
-                    }
-                })
-                
-            }
+    for (let i = 0; i < participant.data.length; i++) {
+      let getParticipant : Participant | undefined = room.getParticipantByIdentity(participant.data[i].identity);
+      if (getParticipant instanceof LocalParticipant) {
+        const localVideoTrack : LocalVideoTrack | undefined =  room.localParticipant.getTrack(Track.Source.Camera)?.videoTrack
+        if (localVideoTrack) {
+          localVideoTrack.setProcessor(BackgroundBlur(10));
         }
-        
-    })
+        room.localParticipant.videoTracks.get(room.localParticipant.getTrack(Track.Source.Camera)?.trackSid as string)?.track?.attach(document.getElementById('test') as HTMLVideoElement);
+      }
+      else if (getParticipant instanceof RemoteParticipant) {
+          getParticipant.tracks.forEach((track: RemoteTrackPublication) => {
+              if (track.mimeType?.includes('video')) {
+                  console.log(`video`)
+                  track.track?.attach(document.getElementById('test2') as HTMLVideoElement);
+              }
+          })
+          
+      }
+    }
 }
 
 export default function TestRoom() {
