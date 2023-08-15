@@ -42,8 +42,9 @@ async function connectRoom() {
     console.log('connected to room', room.name);
     // publish local camera and mic tracks
     await room.localParticipant.enableCameraAndMicrophone();
-    console.log(room.localParticipant.getTracks());
-    // set up event listeners
+    console.log(room.localParticipant.videoTracks);
+	console.log(getEmptyAudioStreamTrack())
+	console.log(await Room.getLocalDevices())
 }
 
 
