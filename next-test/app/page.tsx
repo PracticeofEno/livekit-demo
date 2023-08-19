@@ -1,34 +1,100 @@
 'use client'
 import DropDownList from '@/components/DropDownList'
-import { Room, Track, createLocalVideoTrack } from 'livekit-client'
-import { useEffect } from 'react'
+import {
+  Room,
+  Track,
+  createLocalAudioTrack,
+  createLocalVideoTrack,
+} from 'livekit-client'
+import { useEffect, useState } from 'react'
 
 export default function Page() {
+  let [roomName, setRoomName] = useState('')
   useEffect(() => {
     async function fetchLocalDevices() {
       let tmp = await Room.getLocalDevices()
-      tmp.forEach((device: MediaDeviceInfo) => {
-        console.log(device)
-        if (device.kind === 'videoinput' && device.deviceId == 'default') {
-          createLocalVideoTrack({
-            deviceId: device.deviceId,
-          })
-            .then((track: Track) => {
-              console.log('aa')
-              track.attach(
-                document.getElementById('robby-video') as HTMLVideoElement,
-              )
+      let videosDetect = false
+      let audioDetect = false
+      for (let i = 0; i < tmp.length; i++) {
+        if (!videosDetect) {
+          if (tmp[i].kind == 'videoinput') {
+            videosDetect = true
+            createLocalVideoTrack({
+              deviceId: tmp[i].deviceId,
             })
-            .catch((err) => {
-              console.log(err)
-            })
+              .then((track: Track) => {
+                track.attach(
+                  document.getElementById('robby-video') as HTMLVideoElement,
+                )
+              })
+              .catch((err) => {
+                console.log(err)
+              })
+          }
         }
-      })
-      console.log(tmp)
+        if (!audioDetect) {
+          if (tmp[i].kind == 'audioinput' && tmp[i].deviceId != 'default') {
+            audioDetect = true
+            createLocalAudioTrack({
+              deviceId: tmp[i].deviceId,
+            })
+              .then((track: Track) => {
+                track.attach(
+                  document.getElementById('robby-video') as HTMLVideoElement,
+                )
+              })
+              .catch((err) => {
+                console.log(err)
+              })
+          }
+        }
+      }
       return tmp
     }
     fetchLocalDevices()
   })
+
+  const changeVideo = async (eventData) => {
+    let tmp = await Room.getLocalDevices()
+    console.log(tmp)
+    tmp.forEach((device) => {
+      if (device.label == eventData) {
+        createLocalVideoTrack({
+          deviceId: device.deviceId,
+        })
+          .then((track: Track) => {
+            track.attach(
+              document.getElementById('robby-video') as HTMLVideoElement,
+            )
+          })
+          .catch((err) => {
+            console.log(err)
+          })
+      }
+    })
+    console.log(eventData)
+  }
+
+  const changeAudio = async (eventData) => {
+    let tmp = await Room.getLocalDevices()
+    console.log(tmp)
+    tmp.forEach((device) => {
+      if (device.label == eventData) {
+        createLocalAudioTrack({
+          deviceId: device.deviceId,
+        })
+          .then((track: Track) => {
+            track.attach(
+              document.getElementById('robby-video') as HTMLVideoElement,
+            )
+          })
+          .catch((err) => {
+            console.log(err)
+          })
+      }
+    })
+    console.log(eventData)
+  }
 
   return (
     <div
@@ -47,8 +113,8 @@ export default function Page() {
           id="track-template"
           className="flex flex-row w-full h-[10%] border-b border-black justify-center items-center"
         >
-          <DropDownList label={'video'} />
-          <DropDownList label={'audio'} />
+          <DropDownList label={'video'} changeEvent={changeVideo} />
+          <DropDownList label={'audio'} changeEvent={changeAudio} />
         </div>
         <div
           id="roomName"
@@ -59,8 +125,10 @@ export default function Page() {
             id="last_name"
             className="absolute flex bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             placeholder="RoomName"
+            value={roomName}
             required
           />
+          {roomName}
         </div>
         <div
           id="btn-joinRoom"

@@ -4,7 +4,7 @@ import '../app/globals.css'
 import { SetStateAction, useEffect, useState } from 'react'
 import { Room } from 'livekit-client'
 
-export default function LocalDevicesDropDownList({ label }) {
+export default function DropDownList({ label, changeEvent }) {
   let [localDevices, setLocalDevices] = useState<MediaDeviceInfo[]>([])
   let [localVideoDevices, setLocalVideoDevices] = useState<MediaDeviceInfo[]>(
     [],
@@ -12,6 +12,7 @@ export default function LocalDevicesDropDownList({ label }) {
   let [localAudioDevices, setLocalAudioDevices] = useState<MediaDeviceInfo[]>(
     [],
   )
+  let [value, setValue] = useState('')
 
   useEffect(() => {
     async function fetchLocalDevices() {
@@ -25,16 +26,18 @@ export default function LocalDevicesDropDownList({ label }) {
       setLocalDevices(tmp)
       setLocalAudioDevices(audios)
       setLocalVideoDevices(videos)
-      if (label == 'video' && videos.length > 0) setValue(videos[0].label)
-      else if (label == 'audio' && audios.length > 0) setValue(audios[0].label)
+      if (label == 'video' && localVideoDevices.length > 0)
+        setValue(localVideoDevices[0].label)
+      else if (label == 'audio' && localAudioDevices.length > 0)
+        setValue(localAudioDevices[0].label)
     }
     fetchLocalDevices()
-  }, [localDevices, localVideoDevices, localAudioDevices])
+  }, [])
 
-  let [value, setValue] = useState('')
   function tmp(e: { target: { value: SetStateAction<string> } }) {
     console.log(e.target)
     setValue(e.target.value)
+    changeEvent(e.target.value)
   }
 
   return (
