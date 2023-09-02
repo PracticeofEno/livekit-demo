@@ -1,4 +1,5 @@
 'use client'
+import { getRoomJwtCode } from '@/api/room'
 import DropDownList from '@/components/DropDownList'
 import {
   Room,
@@ -6,47 +7,26 @@ import {
   createLocalAudioTrack,
   createLocalVideoTrack,
 } from 'livekit-client'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function Page() {
   let [roomName, setRoomName] = useState('')
+  let [userName, setUserName] = useState('')
+  let [videoDevices, setVideoDevices] = useState([])
+  let [audioDevices, setAudioDevices] = useState([])
+  const router = useRouter();
   useEffect(() => {
     async function fetchLocalDevices() {
       let tmp = await Room.getLocalDevices()
-      let videosDetect = false
-      let audioDetect = false
+      let videos = []
+      let audieos = []
       for (let i = 0; i < tmp.length; i++) {
-        if (!videosDetect) {
-          if (tmp[i].kind == 'videoinput') {
-            videosDetect = true
-            createLocalVideoTrack({
-              deviceId: tmp[i].deviceId,
-            })
-              .then((track: Track) => {
-                track.attach(
-                  document.getElementById('robby-video') as HTMLVideoElement,
-                )
-              })
-              .catch((err) => {
-                console.log(err)
-              })
-          }
+        if (tmp[i].kind == 'videoinput') {
+          videos.push(tmp[i].label)
         }
-        if (!audioDetect) {
-          if (tmp[i].kind == 'audioinput' && tmp[i].deviceId != 'default') {
-            audioDetect = true
-            createLocalAudioTrack({
-              deviceId: tmp[i].deviceId,
-            })
-              .then((track: Track) => {
-                track.attach(
-                  document.getElementById('robby-video') as HTMLVideoElement,
-                )
-              })
-              .catch((err) => {
-                console.log(err)
-              })
-          }
+        else if (tmp[i].kind == 'audioinput') {
+          audieos.push(tmp[i].label)
         }
       }
       return tmp
@@ -96,6 +76,11 @@ export default function Page() {
     console.log(eventData)
   }
 
+  const joinRoom = async () => {
+    const access = await getRoomJwtCode(roomName, userName);
+    router.push(`/room?access=${access}`)
+  }
+
   return (
     <div
       id="background"
@@ -118,18 +103,28 @@ export default function Page() {
         </div>
         <div
           id="roomName"
-          className="relative flex w-full h-[10%] border-b border-black px-2 py-2 justify-center items-center"
+          className="flex flex-row w-full h-[10%] border-b border-black justify-center items-center"
         >
           <input
             type="text"
             id="last_name"
-            className="absolute flex bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            className="realtive flex w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             placeholder="RoomName"
             value={roomName}
+            onChange={(e) => {setRoomName(e.target.value)}}
             required
           />
-          {roomName}
+          <input
+            type="text"
+            id="last_name"
+            className="realtive flex w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            placeholder="userName"
+            value={userName}
+            onChange={(e) => {setUserName(e.target.value)}}
+            required
+          />
         </div>
+        {roomName} {userName}
         <div
           id="btn-joinRoom"
           className="realtive flex w-full h-[10%] justify-center items-center border-b border-black"
@@ -137,6 +132,7 @@ export default function Page() {
           <button
             id="btn-joinRoom"
             className="relative w-full h-full bg-blue-300 border-black border"
+            onClick={joinRoom}
           >
             입장하기
           </button>

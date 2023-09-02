@@ -5,14 +5,14 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get()
+  @Get('hello')
   getHello(): string {
     return this.appService.getHello();
   }
 
-  @Get('get_lk_token')
-  getToken(@Query('room') room, @Query('username') username): string {
+  @Get('get_room_token')
+  getToken(@Query('room') room, @Query('user') user): string {
     console.log(room);
-    return this.appService.getToken(room, username);
+    return this.appService.getToken(room, user);
   }
 }

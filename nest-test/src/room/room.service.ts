@@ -4,7 +4,7 @@ import { ParticipantInfo, Room, RoomServiceClient } from 'livekit-server-sdk';
 @Injectable()
 export class RoomService {
   private svc: RoomServiceClient;
-  private livekitHost = 'http://localhost:7880';
+  private livekitHost = 'http://teemo-world.link:7880';
   constructor() {
     this.svc = new RoomServiceClient(
       this.livekitHost,

@@ -7,14 +7,14 @@ export class AppService {
     return 'Hello World!';
   }
 
-  getToken(room, username): string {
-    console.log(room, username);
+  getToken(room, user): string {
+    console.log(room, user);
     console.log(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET);
     const at = new AccessToken(
       process.env.LIVEKIT_API_KEY,
       process.env.LIVEKIT_API_SECRET,
       {
-        identity: username,
+        identity: user,
       },
     );
     at.addGrant({
@@ -24,6 +24,30 @@ export class AppService {
       roomCreate: true,
       roomList: true,
       roomRecord: true,
+    });
+    const token = at.toJwt();
+    console.log('access token', token);
+    return token;
+  }
+
+  getHideToken(room, user): string {
+    console.log(room, user);
+    console.log(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET);
+    const at = new AccessToken(
+      process.env.LIVEKIT_API_KEY,
+      process.env.LIVEKIT_API_SECRET,
+      {
+        identity: user,
+      },
+    );
+    at.addGrant({
+      roomJoin: true,
+      room: room,
+      roomAdmin: true,
+      roomCreate: true,
+      roomList: true,
+      roomRecord: true,
+      hidden: true,
     });
     const token = at.toJwt();
     console.log('access token', token);
