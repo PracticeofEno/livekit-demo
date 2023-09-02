@@ -21,6 +21,4 @@ export class EgressService {
     });
     console.log(info);
   }
-
-  async closeEgress(room: string) {}
 }

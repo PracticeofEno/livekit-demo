@@ -14,9 +14,6 @@ export class RoomService {
   }
 
   async listRooms(): Promise<Room[]> {
-    this.svc.listRooms().then((rooms: Room[]) => {
-      console.log('existing rooms', rooms);
-    });
     return await this.svc.listRooms();
   }
 
@@ -50,5 +47,35 @@ export class RoomService {
     }
     console.log('participants = ', participants);
     return participants;
+  }
+
+  private generateRandomString(length) {
+    const characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let randomString = '';
+
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      randomString += characters.charAt(randomIndex);
+    }
+    return randomString;
+  }
+
+  async checkExistRoom(roomName): Promise<boolean> {
+    const rooms = await this.listRooms();
+    for (let i = 0; i < rooms.length; i++) {
+      if (rooms[i].name == roomName) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async getStreamKey(): Promise<string> {
+    let roomName = this.generateRandomString(10);
+    while (await this.checkExistRoom(roomName)) {
+      roomName = this.generateRandomString(10);
+    }
+    return roomName;
   }
 }

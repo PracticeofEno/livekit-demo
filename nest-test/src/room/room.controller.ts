@@ -1,6 +1,5 @@
 import { Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { RoomService } from './room.service';
-import { DeleteRoomRequest } from 'livekit-server-sdk/dist/proto/livekit_room';
 
 @Controller('room')
 export class RoomController {
@@ -24,5 +23,10 @@ export class RoomController {
   @Delete()
   DeleteRoomRequest(@Query('room') room) {
     return this.roomService.deleteRoom(room);
+  }
+
+  @Get('name')
+  getStreamKey() {
+    return this.roomService.getStreamKey();
   }
 }

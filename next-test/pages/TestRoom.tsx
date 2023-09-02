@@ -1,103 +1,123 @@
+import DropDownList from '@/components/DropDownList'
 import '../app/globals.css'
+import LocalParticipantView from '@/components/LocalParticipant'
+import RemoteParticipantView from '@/components/RemoteParticipant'
 import {
-  LocalParticipant,
-  LocalTrack,
-  LocalTrackPublication,
-  LocalVideoTrack,
-  Participant,
-  RemoteParticipant,
-  RemoteTrack,
-  RemoteTrackPublication,
   Room,
-  RoomEvent,
   Track,
-  TrackPublication,
   VideoPresets,
+  createLocalAudioTrack,
+  createLocalTracks,
   createLocalVideoTrack,
 } from 'livekit-client'
-import axios, { type AxiosResponse } from 'axios'
-import { BackgroundBlur } from '@livekit/track-processors'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
 
-const url = 'ws://localhost:7880'
-const token =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6InRlc3QifSwiaWF0IjoxNjkxNTY3NTM2LCJuYmYiOjE2OTE1Njc1MzYsImV4cCI6MTY5MTU4OTEzNiwiaXNzIjoiZGV2a2V5Iiwic3ViIjoidGVzdCIsImp0aSI6InRlc3QifQ.v7DLe-MzNILjBPf97BYkA55Ojsc0c8AABZwJXUpptek'
-
-// creates a new room with options
-const room = new Room({
-  // automatically manage subscribed video quality
-  adaptiveStream: true,
-  // optimize publishing bandwidth and CPU for published tracks
-  dynacast: true,
-  // default capture settings
-  videoCaptureDefaults: {
-    resolution: VideoPresets.h720.resolution,
-  },
-})
-
-// pre-warm connection, this can be called as early as your page is loaded
-room.prepareConnection(url, token)
-
-async function connectRoom() {
-  // connect to room
-  await room.connect('ws://localhost:7880', token)
-  console.log('connected to room', room.name)
-  // publish local camera and mic tracks
-  await room.localParticipant.enableCameraAndMicrophone()
-  console.log(room.localParticipant.videoTracks)
-  console.log(getEmptyAudioStreamTrack())
-  console.log(await Room.getLocalDevices())
-}
-
-async function getRoomParitipants() {
-  let participant = await axios.request({
-    method: 'GET',
-    url: 'http://localhost:4444/room/test/participants',
-  })
-  for (let i = 0; i < participant.data.length; i++) {
-    let getParticipant: Participant | undefined = room.getParticipantByIdentity(
-      participant.data[i].identity,
-    )
-    if (getParticipant instanceof LocalParticipant) {
-      const localVideoTrack: LocalVideoTrack | undefined =
-        room.localParticipant.getTrack(Track.Source.Camera)?.videoTrack
-      if (localVideoTrack) {
-        localVideoTrack.setProcessor(BackgroundBlur(10))
-      }
-      room.localParticipant.videoTracks
-        .get(
-          room.localParticipant.getTrack(Track.Source.Camera)
-            ?.trackSid as string,
-        )
-        ?.track?.attach(document.getElementById('test') as HTMLVideoElement)
-    } else if (getParticipant instanceof RemoteParticipant) {
-      getParticipant.tracks.forEach((track: RemoteTrackPublication) => {
-        if (track.mimeType?.includes('video')) {
-          console.log(`video`)
-          track.track?.attach(
-            document.getElementById('test2') as HTMLVideoElement,
-          )
-        }
+export default function GuestLive() {
+  const [localVideo, setlocalVideo] = useState<Track>()
+  const [localAudio, setlocalAudio] = useState<Track>()
+  const [room, setRoom] = useState<Room>()
+  const path = useRouter().asPath
+  useEffect(() => {
+    async function publishlocalTrack() {
+      // ? 이후의 문자열을 가져와서 &로 나눔
+      const queryStr = path.split('?')[1];
+      const queryParams = queryStr.split('&');
+      const queryObject : any = {};
+      queryParams.forEach(param => {
+        const [key, value] = param.split('=');
+        queryObject[key] = value;
+      });
+      console.log(queryObject)
+      const room = new Room({
+        // automatically manage subscribed video quality
+        adaptiveStream: true,
+        // optimize publishing bandwidth and CPU for published tracks
+        dynacast: true,
+        // default capture settings
+        videoCaptureDefaults: {
+          resolution: VideoPresets.h720.resolution,
+        },
       })
+      setRoom(room)
+      if (queryObject.access) {
+        await room.connect(process.env.NEXT_PUBLIC_LIVEKIT_URL as string, queryObject.access)
+        await room.localParticipant.enableCameraAndMicrophone()
+      }        
+      else {
+        console.log("failed to  access room")
+        // router.push('/')
+      }
+      const haha = await createLocalTracks()
+      haha.forEach((track: Track) => {
+        if (track.kind == Track.Kind.Video) 
+          track.attach(document.getElementById('my-video') as HTMLVideoElement)
+        else
+          track.attach(document.getElementById('my-audio') as HTMLVideoElement)
+      })
+      
     }
-  }
-}
+    publishlocalTrack()
+    
+  }, [])
 
-export default function TestRoom() {
+  const changeVideo = async (eventData) => {
+    let tmp = await Room.getLocalDevices()
+    let device_data: MediaDeviceInfo = null;
+
+    for (const device of tmp) {
+      if (device.label == eventData) {
+        device_data = device;
+        break;
+      }
+      createLocalVideoTrack({
+        deviceId: device.deviceId,
+      })
+        .then((track: Track) => {
+          track.attach(
+            document.getElementById('my-video') as HTMLVideoElement,
+          )
+          setlocalVideo(track)
+        })
+        .catch((err) => {
+          console.log(err)
+        })
+    }
+    if (device_data)
+      await room?.switchActiveDevice('videoinput', device_data.deviceId)
+    console.log(eventData)
+  }
+
+  const changeAudio = async (eventData) => {
+    let tmp = await Room.getLocalDevices()
+    console.log(tmp)
+    tmp.forEach((device) => {
+      if (device.label == eventData) {
+        createLocalAudioTrack({
+          deviceId: device.deviceId,
+        })
+          .then((track: Track) => {
+            track.attach(
+              document.getElementById('my-audio') as HTMLVideoElement,
+            )
+            setlocalAudio(track)
+          })
+          .catch((err) => {
+            console.log(err)
+          })
+      }
+    })
+    console.log(eventData)
+  }
   return (
-    <div className="absolute flex flex-row w-full h-full bg-gray-300">
-      <div className="flex flex-col w-[50%]">
-        <video id="test" />
-        <button className="bg-gray-500 h-10" onClick={connectRoom}>
-          접속
-        </button>
-        <button className="bg-red-500 h-10" onClick={getRoomParitipants}>
-          버튼2{' '}
-        </button>
+    <div className="absolute flex flex-col w-full h-full bg-gray-400 justify-center items-center">
+      <div className='relative flex flex-row w-full h-[65%] bg-red-400 justify-center items-center'>
+        <video id='my-video' className='relative w-[80%] h-[80%]'></video>
+        <audio id='my-audio'></audio>
       </div>
-      <div className="flex flex-col w-[50%]">
-        <video id="test2" />
-        <button>버튼1</button>
-        <button>버튼2</button>
+      <div className='relative flex flex-row w-full h-[35%] bg-blue-400'>
+        <DropDownList label={'video'} changeEvent={changeVideo} />
+        <DropDownList label={'audio'} changeEvent={changeAudio} />
       </div>
     </div>
   )

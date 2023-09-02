@@ -6,9 +6,10 @@ import { RoomController } from './room/room.controller';
 import { RoomModule } from './room/room.module';
 import { ParticipantsModule } from './participants/participants.module';
 import { EgressModule } from './egress/egress.module';
+import { TokenModule } from './token/token.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), RoomModule, ParticipantsModule, EgressModule],
+  imports: [ConfigModule.forRoot(), RoomModule, ParticipantsModule, EgressModule, TokenModule],
   controllers: [AppController, RoomController],
   providers: [AppService],
 })

@@ -11,6 +11,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@livekit/components-react": "^1.1.6",
     "@livekit/track-processors": "^0.2.5",
     "@mui/material": "^5.14.5",
     "@nextui-org/react": "^2.0.12",
@@ -21,7 +22,7 @@
     "eslint": "8.46.0",
     "eslint-config-next": "13.4.12",
     "framer-motion": "^10.15.1",
-    "livekit-client": "^1.12.3",
+    "livekit-client": "^1.13.2",
     "next": "13.4.12",
     "react": "18.2.0",
     "react-dom": "18.2.0",
