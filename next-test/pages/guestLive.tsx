@@ -10,12 +10,14 @@ import {
 } from 'livekit-client'
 import { useEffect, useState } from 'react'
 import { deleteRoom, egressToRtmp, getGuestLiveToken, getStreamKey } from '@/api/room'
+import { useRouter } from 'next/router'
 
 export default function GuestLive() {
   const [room, setRoom] = useState<Room>()
   const [roomKey, setStreamKey] = useState<string>()
   const [localVideo, setlocalVideo] = useState<Track>()
   const [localAudio, setlocalAudio] = useState<Track>()
+  const router = useRouter();
   
   useEffect(() => {
     async function initialize() {
@@ -35,13 +37,24 @@ export default function GuestLive() {
         },
       })
       setRoom(room)
-      const localTracks = await createLocalTracks()
-      localTracks.forEach((track: Track) => {
-        if (track.kind == Track.Kind.Video) 
+      let localTracks: Track[] = []
+      try {
+        localTracks = await createLocalTracks()
+      }
+      catch(e) {
+        alert('카메라 및 마이크를 허용해주세요.')
+        router.push('/');
+      }
+      for (const track of localTracks) {
+        if (track.kind == Track.Kind.Video) {
           track.attach(document.getElementById('my-video') as HTMLVideoElement)
-        else
+          setlocalVideo(track)
+        }
+        else {
           track.attach(document.getElementById('my-audio') as HTMLVideoElement)
-      })
+          setlocalAudio(track)
+        }
+      }
       await room.connect(process.env.NEXT_PUBLIC_LIVEKIT_URL as string, at)
       await room.localParticipant.enableCameraAndMicrophone()
       console.log(streamKey);
@@ -50,7 +63,7 @@ export default function GuestLive() {
     initialize();
     return async () => {
       if (roomKey)
-        await deleteRoom(roomKey);
+        deleteRoom(roomKey);
     }
   }, [])
 
