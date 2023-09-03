@@ -6,7 +6,11 @@ export default function Page() {
   return (
     <div className="relative flex flex-col w-full h-full bg-gray-400 justify-center items-center text-justify">
       <h1 className="relative text-4xl">사용법</h1>
+      <hr/>
       <ol>
+        <li>
+          0. 카메라 및 마이크를 준비하고 권한을 줘야 방송이 가능합니다.
+        </li>
         <li>
           {"1. "}
           <Link className="text-blue-600" href="https://teemo-world.link/guestLive">https://teemo-world.link/guestLive</Link>
