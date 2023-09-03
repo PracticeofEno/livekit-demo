@@ -28,6 +28,7 @@ export async function getGuestLiveToken(room: string) {
 }
 
 export async function egressToRtmp(room: string) {
+  console.log(room);
   const response = await axios.request({
     method: 'POST',
     baseURL: process.env.NEXT_PUBLIC_BACKEND_BASE_URL,
@@ -37,4 +38,15 @@ export async function egressToRtmp(room: string) {
     }
   })
   return response.data;  
+}
+
+export async function deleteRoom(room:string) {
+  await axios.request({
+    method: 'DELETE',
+    baseURL: process.env.NEXT_PUBLIC_BACKEND_BASE_URL,
+    url: `/room?room=${room}`,
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  })
 }

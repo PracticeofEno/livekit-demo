@@ -22,6 +22,7 @@ export class RoomController {
 
   @Delete()
   DeleteRoomRequest(@Query('room') room) {
+    console.log(`delete room ${room}`);
     return this.roomService.deleteRoom(room);
   }
 

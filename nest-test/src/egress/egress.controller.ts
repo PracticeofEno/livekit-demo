@@ -7,6 +7,7 @@ export class EgressController {
 
   @Post('/:room')
   async creeateEgress(@Param('room') room: string) {
+    console.log(`start egress for room ${room}`);
     return await this.egressService.creatEgress(room);
   }
 }

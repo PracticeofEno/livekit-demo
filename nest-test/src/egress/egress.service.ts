@@ -19,6 +19,6 @@ export class EgressService {
     const info = await this.ec.startRoomCompositeEgress(room, output, {
       layout: 'grid',
     });
-    console.log(info);
+    // console.log(info);
   }
 }
