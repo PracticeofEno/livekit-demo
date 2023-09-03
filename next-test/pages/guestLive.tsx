@@ -9,12 +9,11 @@ import {
   createLocalVideoTrack,
 } from 'livekit-client'
 import { useEffect, useState } from 'react'
-import { egressToRtmp, getGuestLiveToken, getStreamKey } from '@/api/room'
+import { deleteRoom, egressToRtmp, getGuestLiveToken, getStreamKey } from '@/api/room'
 
 export default function GuestLive() {
   const [room, setRoom] = useState<Room>()
-  const [streamKey, setStreamKey] = useState<string>()
-  const [accessToken, setAccessToken] = useState<string>()
+  const [roomKey, setStreamKey] = useState<string>()
   const [localVideo, setlocalVideo] = useState<Track>()
   const [localAudio, setlocalAudio] = useState<Track>()
   
@@ -23,7 +22,6 @@ export default function GuestLive() {
       const streamKey = await getStreamKey()
       setStreamKey(streamKey);
       const at = await getGuestLiveToken(streamKey);
-      setAccessToken(at);
       console.log(`room name: ${streamKey}`)
       console.log(`accessToken: ${at}`)
       const room = new Room({
@@ -50,6 +48,10 @@ export default function GuestLive() {
       await egressToRtmp(streamKey)
     }
     initialize();
+    return async () => {
+      if (roomKey)
+        await deleteRoom(roomKey);
+    }
   }, [])
 
   const changeVideo = async (eventData) => {
@@ -111,7 +113,7 @@ export default function GuestLive() {
   }
 
   const onCopyClick = () => {
-    navigator.clipboard.writeText(`rtmp://teemo-world.link/live/${streamKey}`)
+    navigator.clipboard.writeText(`rtmp://teemo-world.link/live/${roomKey}`)
   }
   const onMouseEnter = () => {
 
@@ -127,8 +129,8 @@ export default function GuestLive() {
   return (
     <div className="absolute flex flex-col w-full h-full bg-gray-400 justify-center items-center">
       <div className='flex flex-row justify-center items-center'>
-        {`rtmp://teemo-world.link/live/${streamKey}`}
-        <CopyClipboard content={`rtmp://teemo-world.link/live/${streamKey}`}/>
+        {`rtmp://teemo-world.link/live/${roomKey}`}
+        <CopyClipboard content={`rtmp://teemo-world.link/live/${roomKey}`}/>
       </div>
       <div className='relative flex flex-row w-full h-[65%] bg-red-400 justify-center items-center'>
         <video id='my-video' className='relative w-[80%] h-[80%]'></video>
