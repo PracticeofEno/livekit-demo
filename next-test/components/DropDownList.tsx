@@ -2,42 +2,50 @@
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material'
 import '../app/globals.css'
 import { SetStateAction, useEffect, useState } from 'react'
-import { Room } from 'livekit-client'
+import { Track, createLocalAudioTrack, createLocalVideoTrack } from 'livekit-client'
 
-export default function DropDownList({ label, changeEvent }) {
-  let [localDevices, setLocalDevices] = useState<MediaDeviceInfo[]>([])
-  let [localVideoDevices, setLocalVideoDevices] = useState<MediaDeviceInfo[]>(
-    [],
-  )
-  let [localAudioDevices, setLocalAudioDevices] = useState<MediaDeviceInfo[]>(
-    [],
-  )
-  let [value, setValue] = useState('')
-
-  useEffect(() => {
-    async function fetchLocalDevices() {
-      let tmp = await Room.getLocalDevices()
-      let videos = tmp.filter((device: MediaDeviceInfo) => {
-        return device.kind === 'videoinput'
-      })
-      let audios = tmp.filter((device: MediaDeviceInfo) => {
-        return device.kind === 'audioinput'
-      })
-      setLocalDevices(tmp)
-      setLocalAudioDevices(audios)
-      setLocalVideoDevices(videos)
-      if (label == 'video' && localVideoDevices.length > 0)
-        setValue(localVideoDevices[0].label)
-      else if (label == 'audio' && localAudioDevices.length > 0)
-        setValue(localAudioDevices[0].label)
-    }
-    fetchLocalDevices()
-  }, [])
+export default function DropDownList({ label, props_datas} : { label: string, props_datas: MediaDeviceInfo[]}) {
+  const [value, setValue] = useState<string>('')
 
   function tmp(e: { target: { value: SetStateAction<string> } }) {
     console.log(e.target)
     setValue(e.target.value)
-    changeEvent(e.target.value)
+    // changeEvent(e.target.value)
+  }
+
+  const onChanged = async (eventData: any) => {
+    for (const device of props_datas) {
+      if (device.label == eventData.target.value.label) {
+        setValue(device)
+        if (device.kind == 'videoinput') {
+          createLocalVideoTrack({
+            deviceId: device.deviceId,
+          })
+            .then((track: Track) => {
+              track.attach(
+                document.getElementById('my-video') as HTMLVideoElement,
+              )
+            })
+            .catch((err) => {
+              console.log(err)
+            })
+        }
+        else {
+          createLocalAudioTrack({
+            deviceId: device.deviceId,
+          })
+            .then((track: Track) => {
+              track.attach(
+                document.getElementById('my-audio') as HTMLAudioElement,
+              )
+            })
+            .catch((err) => {
+              console.log(err)
+            })
+        }
+        break;
+      }
+    }
   }
 
   return (
@@ -48,19 +56,15 @@ export default function DropDownList({ label, changeEvent }) {
         id="demo-simple-select"
         value={value}
         label="Age"
-        onChange={tmp}
+        onChange={onChanged}
       >
-        {label == 'video'
-          ? localVideoDevices?.map((device: any) => (
-              <MenuItem key={device.label} value={device.label}>
+        { 
+          props_datas?.map((device: any) => (
+              <MenuItem key={device.label} value={device}>
                 {device.label}
               </MenuItem>
             ))
-          : localAudioDevices?.map((device: any) => (
-              <MenuItem key={device.label} value={device.label}>
-                {device.label}
-              </MenuItem>
-            ))}
+        }
       </Select>
     </FormControl>
   )

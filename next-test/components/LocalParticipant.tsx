@@ -1,48 +1,42 @@
 import { useEffect, useState } from 'react'
 import '../app/globals.css'
-import { Room } from 'livekit-client'
+import { LocalParticipant, Room, Track, createLocalTracks } from 'livekit-client'
 import { Button } from '@mui/material'
 import DropDownList from './DropDownList'
+import router from 'next/router'
 
-export default function LocalParticipantView() {
-  let [localDevices, setLocalDevices] = useState<MediaDeviceInfo[]>([])
-  let [localVideoDevices, setLocalVideoDevices] = useState<MediaDeviceInfo[]>(
-    [],
-  )
-  let [localAudioDevices, setLocalAudioDevices] = useState<MediaDeviceInfo[]>(
-    [],
-  )
+export default function LocalParticipantView({ props_lp } : { props_lp: LocalParticipant }) {
+  const [localParticipant, setLocalParticipant] = useState<LocalParticipant>()
   useEffect(() => {
-    async function fetchLocalDevices() {
-      let tmp = await Room.getLocalDevices()
-      let videos = tmp.filter((device: MediaDeviceInfo) => {
-        return device.kind === 'videoinput'
-      })
-      let audios = tmp.filter((device: MediaDeviceInfo) => {
-        return device.kind === 'audioinput'
-      })
-      setLocalDevices(tmp)
-      setLocalAudioDevices(audios)
-      setLocalVideoDevices(videos)
-      // Do something with localDevices
+    setLocalParticipant(props_lp)
+    async function init() {
+      let localTracks: Track[] = []
+      try {
+        localTracks = await createLocalTracks()
+      }
+      catch(e) {
+        alert('카메라 및 마이크를 허용해주세요.')
+        router.push('/');
+      }
+      for (const track of localTracks) {
+        console.log(track)
+        if (track.kind == Track.Kind.Video) {
+          track.attach(document.getElementById('my-video') as HTMLVideoElement)
+        }
+        else {
+          track.attach(document.getElementById('my-audio') as HTMLVideoElement)
+        }
+      }
     }
-    fetchLocalDevices()
-  }, [localDevices, localVideoDevices, localAudioDevices])
+    init()
+    // room.on('localTrackUnpublished', onLocalTrackUnpublished)
+    
+  }, [])
 
   return (
-    <div className="relative flex flex-col w-full h-full rounded-md border-black border">
-      <div className="flex w-full h-[77%]">
-        <video id="participant-video" className="flex w-full h-full" />
-      </div>
-      <div className="w-full h-[15%] bg-blue-400 flex flex-row justify-center items-center border-black rounded-md border-t">
-        <DropDownList label={'video'} />
-        <DropDownList label={'audio'} />
-      </div>
-      <div className="flex w-full h-[8%] border-black rounded-md border-t">
-        <Button className="w-full" variant="outlined">
-          접속하기
-        </Button>
-      </div>
+    <div className="flex flex-col w-full h-full rounded-md border-black border justify-center items-center">
+      <video id='my-video' className='flex w-[80%] h-[80%]'></video>
+      <audio id='my-audio'></audio>
     </div>
   )
 }

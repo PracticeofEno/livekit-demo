@@ -8,6 +8,9 @@ export class CallbackController {
   @Post('on_publish')
   async onPublish(@Body() body: any) {
     console.log(`on_publish callback : ${body.name}`);
+    if (body.name == '123' || body.name == '1234') {
+      return;
+    }
     return await this.callbackService.onPublish(body.name);
   }
 }

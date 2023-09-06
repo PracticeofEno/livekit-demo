@@ -1,20 +1,16 @@
 import DropDownList from '@/components/DropDownList'
 import '../app/globals.css'
 import {
-  LocalTrackPublication,
   Room,
-  ScreenShareCaptureOptions,
   Track,
   VideoPresets,
   createLocalAudioTrack,
-  createLocalScreenTracks,
   createLocalTracks,
   createLocalVideoTrack,
 } from 'livekit-client'
 import { useEffect, useState } from 'react'
 import { deleteRoom, egressToRtmp, getGuestLiveToken, getStreamKey } from '@/api/room'
 import { useRouter } from 'next/router'
-import Button from '@mui/material/Button'
 
 export default function GuestLive() {
   const [room, setRoom] = useState<Room>()
@@ -132,19 +128,8 @@ export default function GuestLive() {
   const onCopyClick = () => {
     navigator.clipboard.writeText(`rtmp://teemo-world.link/live/${roomKey}`)
   }
-  const screenShare = async () => {
-    console.log("aa")
-    let localParticipants_tracks = await room?.localParticipant.tracks
-    localParticipants_tracks?.forEach((track => {
-      console.log(track)
-      if (track?.track) {
-        room?.localParticipant.unpublishTrack(track?.track)
-      }
-    }))
-    let publication = await room?.localParticipant.setScreenShareEnabled(true)
-    if (publication?.track) {
-      await room?.localParticipant.publishTrack(publication?.track)
-    }
+  const onMouseEnter = () => {
+
   }
 
   const CopyClipboard =({content}) => {
@@ -167,7 +152,6 @@ export default function GuestLive() {
       <div className='relative flex flex-row w-full h-[35%] bg-blue-400'>
         <DropDownList label={'video'} changeEvent={changeVideo} />
         <DropDownList label={'audio'} changeEvent={changeAudio} />
-        <Button onClick={screenShare}>aa</Button>
       </div>
     </div>
   )
