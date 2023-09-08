@@ -5,7 +5,7 @@ import { Button } from '@mui/material'
 import DropDownList from './DropDownList'
 import router from 'next/router'
 
-export default function LocalParticipantView({ props_lp } : { props_lp: LocalParticipant }) {
+export default function LocalParticipantView({ props_lp }: { props_lp: LocalParticipant | undefined }) {
   const [localParticipant, setLocalParticipant] = useState<LocalParticipant>()
   useEffect(() => {
     setLocalParticipant(props_lp)
@@ -14,23 +14,16 @@ export default function LocalParticipantView({ props_lp } : { props_lp: LocalPar
       try {
         localTracks = await createLocalTracks()
       }
-      catch(e) {
+      catch (e) {
         alert('카메라 및 마이크를 허용해주세요.')
         router.push('/');
       }
-      for (const track of localTracks) {
-        console.log(track)
-        if (track.kind == Track.Kind.Video) {
-          track.attach(document.getElementById('my-video') as HTMLVideoElement)
-        }
-        else {
-          track.attach(document.getElementById('my-audio') as HTMLVideoElement)
-        }
-      }
+      props_lp?.getTrack(Track.Source.Camera)?.track?.attach(document.getElementById('my-video') as HTMLVideoElement)
+      props_lp?.getTrack(Track.Source.Microphone)?.track?.attach(document.getElementById('my-video') as HTMLVideoElement)
     }
     init()
     // room.on('localTrackUnpublished', onLocalTrackUnpublished)
-    
+
   }, [])
 
   return (

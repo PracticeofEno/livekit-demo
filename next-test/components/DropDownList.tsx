@@ -4,20 +4,17 @@ import '../app/globals.css'
 import { SetStateAction, useEffect, useState } from 'react'
 import { Track, createLocalAudioTrack, createLocalVideoTrack } from 'livekit-client'
 
-export default function DropDownList({ label, props_datas} : { label: string, props_datas: MediaDeviceInfo[]}) {
+export default function DropDownList({ label, props_datas, changeData }: { label: string, props_datas: MediaDeviceInfo[], changeData: any }) {
   const [value, setValue] = useState<string>('')
 
-  function tmp(e: { target: { value: SetStateAction<string> } }) {
-    console.log(e.target)
-    setValue(e.target.value)
-    // changeEvent(e.target.value)
-  }
 
   const onChanged = async (eventData: any) => {
     for (const device of props_datas) {
-      if (device.label == eventData.target.value.label) {
-        setValue(device)
+      console.log(eventData)
+      if (device == eventData.target.value) {
+        setValue(eventData.target.value)
         if (device.kind == 'videoinput') {
+          changeData(eventData.target.value)
           createLocalVideoTrack({
             deviceId: device.deviceId,
           })
@@ -31,6 +28,7 @@ export default function DropDownList({ label, props_datas} : { label: string, pr
             })
         }
         else {
+          changeData(eventData.target.value)
           createLocalAudioTrack({
             deviceId: device.deviceId,
           })
@@ -55,15 +53,16 @@ export default function DropDownList({ label, props_datas} : { label: string, pr
         labelId="demo-simple-select-label"
         id="demo-simple-select"
         value={value}
+        defaultValue=''
         label="Age"
         onChange={onChanged}
       >
-        { 
+        {
           props_datas?.map((device: any) => (
-              <MenuItem key={device.label} value={device}>
-                {device.label}
-              </MenuItem>
-            ))
+            <MenuItem key={device.label} value={device}>
+              {device.label}
+            </MenuItem>
+          ))
         }
       </Select>
     </FormControl>

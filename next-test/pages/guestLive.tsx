@@ -1,28 +1,26 @@
 import DropDownList from '@/components/DropDownList'
 import '../app/globals.css'
 import {
+  LocalParticipant,
   LocalTrackPublication,
   Room,
-  ScreenShareCaptureOptions,
   Track,
   VideoPresets,
-  createLocalAudioTrack,
-  createLocalScreenTracks,
-  createLocalTracks,
-  createLocalVideoTrack,
 } from 'livekit-client'
 import { useEffect, useState } from 'react'
 import { deleteRoom, egressToRtmp, getGuestLiveToken, getStreamKey } from '@/api/room'
 import { useRouter } from 'next/router'
-import Button from '@mui/material/Button'
+import { Button } from '@mui/material'
+import LocalParticipantView from '@/components/LocalParticipant'
 
 export default function GuestLive() {
   const [room, setRoom] = useState<Room>()
   const [roomKey, setStreamKey] = useState<string>()
-  const [localVideo, setlocalVideo] = useState<Track>()
-  const [localAudio, setlocalAudio] = useState<Track>()
-  const router = useRouter();
-  
+  const [localParticipant, setLocalParticipant] = useState<LocalParticipant>()
+  const [localDevices, setLocalDevices] = useState<MediaDeviceInfo[]>()
+  const [vidoes, setVideos] = useState<MediaDeviceInfo[]>()
+  const [audios, setAudios] = useState<MediaDeviceInfo[]>()
+
   useEffect(() => {
     async function initialize() {
       const streamKey = await getStreamKey()
@@ -41,133 +39,88 @@ export default function GuestLive() {
         },
       })
       setRoom(room)
-      let localTracks: Track[] = []
-      try {
-        localTracks = await createLocalTracks()
-      }
-      catch(e) {
-        alert('카메라 및 마이크를 허용해주세요.')
-        router.push('/');
-      }
-      for (const track of localTracks) {
-        if (track.kind == Track.Kind.Video) {
-          track.attach(document.getElementById('my-video') as HTMLVideoElement)
-          setlocalVideo(track)
+      const localDevices2 = await Room.getLocalDevices()
+      const video2 = localDevices2.filter((device) => {
+        if (device.kind == 'videoinput') {
+          return device
         }
-        else {
-          track.attach(document.getElementById('my-audio') as HTMLVideoElement)
-          setlocalAudio(track)
+      })
+      setVideos(video2)
+      const audios2 = localDevices2.filter((device) => {
+        if (device.kind == 'audioinput') {
+          return device
         }
-      }
+      })
+      setAudios(audios2)
+      await room.localParticipant.getTrack
+      setLocalDevices(localDevices2)
+
+      room.on('localTrackUnpublished', onLocalTrackUnpublished)
       await room.connect(process.env.NEXT_PUBLIC_LIVEKIT_URL as string, at)
+      setLocalParticipant(room.localParticipant)
       await room.localParticipant.enableCameraAndMicrophone()
-      console.log(streamKey);
       await egressToRtmp(streamKey)
     }
     initialize();
-    return async () => {
+    return () => {
       if (roomKey)
         deleteRoom(roomKey);
     }
   }, [])
 
-  const changeVideo = async (eventData) => {
-    let tmp = await Room.getLocalDevices()
-    let device_data: any = null;
+  const onLocalTrackUnpublished = async (publication: LocalTrackPublication, participant: LocalParticipant) => {
+    console.log(`unpublish Localtrack `)
+    console.log(publication)
+    console.log(room?.localParticipant.videoTracks)
+    console.log(localParticipant)
+    console.log(localParticipant?.videoTracks)
+    if (publication?.track) {
+      if (publication?.track.source == Track.Source.ScreenShare) {
 
-    for (const device of tmp) {
-      if (device.label == eventData) {
-        device_data = device;
-        break;
+        // console.log(await room?.localParticipant.get)
+        // await room?.localParticipant.publishTrack()
       }
     }
-    if (device_data) {
-      await room?.switchActiveDevice('videoinput', device_data.deviceId)
-      createLocalVideoTrack({
-        deviceId: device_data.deviceId,
-      })
-        .then((track: Track) => {
-          track.attach(
-            document.getElementById('my-video') as HTMLVideoElement,
-          )
-          setlocalVideo(track)
-        })
-        .catch((err) => {
-          console.log(err)
-        })
-    }
-    console.log(eventData)
+
   }
 
-  const changeAudio = async (eventData) => {
-    let tmp = await Room.getLocalDevices()
-    let device_data: any = null;
-    console.log(tmp)
-    tmp.forEach((device) => {
-      for (const device of tmp) {
-        if (device.label == eventData) {
-          device_data = device;
-          break;
-        }
-      }
-    })
-    if (device_data) {
-      await room?.switchActiveDevice('audioinput', device_data.deviceId)
-      createLocalVideoTrack({
-        deviceId: device_data.deviceId,
-      })
-        .then((track: Track) => {
-          track.attach(
-            document.getElementById('my-audio') as HTMLVideoElement,
-          )
-          setlocalVideo(track)
-        })
-        .catch((err) => {
-          console.log(err)
-        })
-    }
-    console.log(eventData)
-  }
-
-  const onCopyClick = () => {
-    navigator.clipboard.writeText(`rtmp://teemo-world.link/live/${roomKey}`)
-  }
   const screenShare = async () => {
-    console.log("aa")
     let localParticipants_tracks = await room?.localParticipant.tracks
-    localParticipants_tracks?.forEach((track => {
-      console.log(track)
-      if (track?.track) {
-        room?.localParticipant.unpublishTrack(track?.track)
-      }
-    }))
     let publication = await room?.localParticipant.setScreenShareEnabled(true)
     if (publication?.track) {
-      await room?.localParticipant.publishTrack(publication?.track)
+      publication?.track.attach(document.getElementById('my-video') as HTMLVideoElement)
+      // room?.localParticipant.get
+      await room?.switchActiveDevice('videoinput', await publication.track.getDeviceId() as string)
+      // await room?.localParticipant.publishTrack(publication?.track)
     }
   }
 
-  const CopyClipboard =({content}) => {
-
-    return ( <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mx-1 shadow-md shadow-slate-700 active:translate-y-1 hover:cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} onClick={() => navigator.clipboard.writeText(content)}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+  const CopyClipboard = ({ content }: any) => {
+    return (<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mx-1 shadow-md shadow-slate-700 active:translate-y-1 hover:cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} onClick={() => navigator.clipboard.writeText(content)}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
     </svg>)
-   }
+  }
+  const onSelectChanged = async (eventData: any) => {
+    await room?.switchActiveDevice(eventData.kind, eventData.deviceId)
+  }
 
   return (
     <div className="absolute flex flex-col w-full h-full bg-gray-400 justify-center items-center">
-      <div className='flex flex-row justify-center items-center'>
+      <div className='flex flex-row justify-center items-center h-[3%]'>
         {`rtmp://teemo-world.link/live/${roomKey}`}
-        <CopyClipboard content={`rtmp://teemo-world.link/live/${roomKey}`}/>
+        <CopyClipboard content={`rtmp://teemo-world.link/live/${roomKey}`} />
       </div>
       <div className='relative flex flex-row w-full h-[65%] bg-red-400 justify-center items-center'>
-        <video id='my-video' className='relative w-[80%] h-[80%]'></video>
-        <audio id='my-audio'></audio>
+        <LocalParticipantView props_lp={localParticipant} />
       </div>
-      <div className='relative flex flex-row w-full h-[35%] bg-blue-400'>
-        <DropDownList label={'video'} changeEvent={changeVideo} />
-        <DropDownList label={'audio'} changeEvent={changeAudio} />
-        <Button onClick={screenShare}>aa</Button>
+      <div className='relative flex flex-row w-full h-[8%] bg-blue-400'>
+        <DropDownList label={'video'} props_datas={vidoes as MediaDeviceInfo[]} changeData={onSelectChanged} />
+        <DropDownList label={'audio'} props_datas={audios as MediaDeviceInfo[]} changeData={onSelectChanged} />
+      </div>
+      <div className='relative flex flex-row w-full h-[5%] bg-blue-300'>
+        <Button className='flex w-full' onClick={screenShare}>컴퓨터 화면 공유</Button>
+      </div>
+      <div className='relative flex flex-row w-full h-[22%] bg-white'>
       </div>
     </div>
   )
