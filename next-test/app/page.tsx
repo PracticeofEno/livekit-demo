@@ -6,7 +6,7 @@ export default function Page() {
   return (
     <div className="relative flex flex-col w-full h-full bg-gray-400 justify-center items-center text-justify">
       <h1 className="relative text-4xl">사용법</h1>
-      <hr/>
+      <hr />
       <ol>
         <li>
           0. 카메라 및 마이크를 준비하고 권한을 줘야 방송이 가능합니다.
@@ -17,7 +17,7 @@ export default function Page() {
           {"에 접속"}
         </li>
         <li>
-          2. 위의 rtmp://teemo-world.link/live/iaZPZi74aa 에 있는 주소 복사 버튼 클릭해서 공유
+          2. 시청자는 위의 rtmp://teemo-world.link/live/iaZPZi74aa 에 있는 주소 복사 버튼 클릭해서 BJ한테 공유
         </li>
         <li>
           3. BJ가 공유받은 주소를 OBS나 Xsplit에서 가져옴
